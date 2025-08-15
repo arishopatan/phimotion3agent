@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
-import { AnalysisStatus, VideoFile, AnalysisResult } from '@/types';
-import { storage, createError } from '@/utils';
+import { AnalysisStatus, VideoFile, AnalysisResult, AnalysisData } from '@/types';
+import { storage } from '@/utils';
+import { MotionAnalysisService, ApiError } from '@/services/api';
 
 interface UseAnalysisReturn {
   status: AnalysisStatus;
@@ -10,6 +11,7 @@ interface UseAnalysisReturn {
   error: string | null;
   currentVideo: VideoFile | null;
   analysisHistory: AnalysisResult[];
+  analysisData: AnalysisData | null;
   startAnalysis: (videoFile: File) => Promise<void>;
   resetAnalysis: () => void;
   retryAnalysis: () => Promise<void>;
@@ -21,6 +23,7 @@ export const useAnalysis = (): UseAnalysisReturn => {
   const [error, setError] = useState<string | null>(null);
   const [currentVideo, setCurrentVideo] = useState<VideoFile | null>(null);
   const [analysisHistory, setAnalysisHistory] = useState<AnalysisResult[]>([]);
+  const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
 
   // Load analysis history from localStorage on mount
   useEffect(() => {
@@ -55,13 +58,17 @@ export const useAnalysis = (): UseAnalysisReturn => {
       setStatus('processing');
       setProgress(30);
 
-      // Simulate processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call real API for analysis
       setStatus('analyzing');
       setProgress(70);
+      
+      const analysisResult = await MotionAnalysisService.analyzeMotion({
+        name: videoFile.name,
+        size: videoFile.size,
+        type: videoFile.type
+      });
 
-      // Simulate analysis
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      setAnalysisData(analysisResult);
       setStatus('completed');
       setProgress(100);
 
@@ -113,8 +120,15 @@ export const useAnalysis = (): UseAnalysisReturn => {
       setAnalysisHistory(prev => [result, ...prev.slice(0, 9)]); // Keep last 10 analyses
 
     } catch (err) {
-      const error = createError('ANALYSIS_FAILED', 'Analysis failed to complete', err);
-      setError(error.message);
+      let errorMessage = 'Analysis failed to complete';
+      
+      if (err instanceof ApiError) {
+        errorMessage = err.message;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
       setStatus('error');
       setProgress(0);
     }
@@ -141,6 +155,7 @@ export const useAnalysis = (): UseAnalysisReturn => {
     error,
     currentVideo,
     analysisHistory,
+    analysisData,
     startAnalysis,
     resetAnalysis,
     retryAnalysis

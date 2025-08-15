@@ -11,14 +11,16 @@ type AnalysisStatus = "idle" | "uploading" | "processing" | "analyzing" | "compl
 interface AnalysisStatusProps {
   status: AnalysisStatus;
   progress?: number;
-  error?: string;
+  error?: string | null;
 }
 
-export function AnalysisStatus({ status, error }: AnalysisStatusProps) {
+export function AnalysisStatus({ status, error, progress }: AnalysisStatusProps) {
   const [currentProgress, setCurrentProgress] = useState(0);
 
   useEffect(() => {
-    if (status === "processing" || status === "analyzing") {
+    if (progress !== undefined) {
+      setCurrentProgress(progress);
+    } else if (status === "processing" || status === "analyzing") {
       const interval = setInterval(() => {
         setCurrentProgress(prev => {
           if (prev >= 95) return prev;
@@ -32,7 +34,7 @@ export function AnalysisStatus({ status, error }: AnalysisStatusProps) {
     } else {
       setCurrentProgress(0);
     }
-  }, [status]);
+  }, [status, progress]);
 
   const getStatusIcon = () => {
     switch (status) {

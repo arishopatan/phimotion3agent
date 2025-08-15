@@ -1,26 +1,29 @@
 "use client";
 
-import { useState } from "react";
+
 import { VideoUpload } from "@/components/VideoUpload";
 import { AnalysisStatus } from "@/components/AnalysisStatus";
 import { Charts } from "@/components/Charts";
+import { AnalysisResults } from "@/components/AnalysisResults";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { useAnalysis } from "@/hooks/useAnalysis";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, Users, Target, TrendingUp } from "lucide-react";
 
-type AnalysisStatusType = "idle" | "uploading" | "processing" | "analyzing" | "completed" | "error";
+
 
 export default function Dashboard() {
-  const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatusType>("idle");
+  const {
+    status: analysisStatus,
+    progress,
+    error,
+    analysisData,
+    startAnalysis
+  } = useAnalysis();
 
-  const handleVideoSelect = (_file: File) => {
-    setAnalysisStatus("uploading");
-    
-    // Simulate analysis process
-    setTimeout(() => setAnalysisStatus("processing"), 1000);
-    setTimeout(() => setAnalysisStatus("analyzing"), 3000);
-    setTimeout(() => setAnalysisStatus("completed"), 8000);
+  const handleVideoSelect = (file: File) => {
+    startAnalysis(file);
   };
 
   const metrics = [
@@ -115,14 +118,21 @@ export default function Dashboard() {
           {/* Left Column - Upload and Status */}
           <div className="lg:col-span-1 space-y-6">
             <VideoUpload onVideoSelect={handleVideoSelect} />
-            <AnalysisStatus status={analysisStatus} />
+            <AnalysisStatus status={analysisStatus} progress={progress} error={error} />
             <ThemeSwitcher />
           </div>
 
           {/* Right Column - Charts and Results */}
-          <div className="lg:col-span-2">
-            {analysisStatus === "completed" ? (
-              <Charts />
+          <div className="lg:col-span-2 space-y-6">
+            {analysisStatus === "completed" && analysisData ? (
+              <>
+                <Charts data={analysisData} />
+                <AnalysisResults 
+                  data={analysisData}
+                  onExport={() => console.log('Export functionality')}
+                  onShare={() => console.log('Share functionality')}
+                />
+              </>
             ) : (
               <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg h-full">
                 <CardHeader>

@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import { Activity, TrendingUp, Target } from "lucide-react";
+import { AnalysisData } from "@/types";
 
 // Sample data for demonstration
 const jointAngleData = [
@@ -30,7 +31,11 @@ const movementQualityData = [
   { name: "Poor", value: 5, color: "#ef4444" },
 ];
 
-export function Charts() {
+interface ChartsProps {
+  data?: AnalysisData;
+}
+
+export function Charts({ data }: ChartsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Joint Angles Over Time */}
@@ -46,7 +51,7 @@ export function Charts() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={jointAngleData}>
+            <LineChart data={data?.jointAngles || jointAngleData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis 
                 dataKey="time" 
@@ -103,7 +108,7 @@ export function Charts() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={symmetryData}>
+            <BarChart data={data?.symmetry || symmetryData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis 
                 dataKey="joint" 
@@ -143,7 +148,12 @@ export function Charts() {
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
-                data={movementQualityData}
+                data={data?.movementQuality ? [
+                  { name: "Excellent", value: data.movementQuality.excellent, color: "#10b981" },
+                  { name: "Good", value: data.movementQuality.good, color: "#3b82f6" },
+                  { name: "Fair", value: data.movementQuality.fair, color: "#f59e0b" },
+                  { name: "Poor", value: data.movementQuality.poor, color: "#ef4444" }
+                ] : movementQualityData}
                 cx="50%"
                 cy="50%"
                 innerRadius={40}
@@ -165,7 +175,12 @@ export function Charts() {
             </PieChart>
           </ResponsiveContainer>
           <div className="flex flex-wrap gap-2 mt-4">
-            {movementQualityData.map((item, index) => (
+            {(data?.movementQuality ? [
+              { name: "Excellent", value: data.movementQuality.excellent, color: "#10b981" },
+              { name: "Good", value: data.movementQuality.good, color: "#3b82f6" },
+              { name: "Fair", value: data.movementQuality.fair, color: "#f59e0b" },
+              { name: "Poor", value: data.movementQuality.poor, color: "#ef4444" }
+            ] : movementQualityData).map((item, index) => (
               <div key={index} className="flex items-center gap-1 text-xs">
                 <div 
                   className="w-3 h-3 rounded-full" 
