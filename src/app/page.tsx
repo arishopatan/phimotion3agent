@@ -1,103 +1,168 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { VideoUpload } from "@/components/VideoUpload";
+import { AnalysisStatus } from "@/components/AnalysisStatus";
+import { Charts } from "@/components/Charts";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Activity, Users, Target, TrendingUp } from "lucide-react";
+
+type AnalysisStatusType = "idle" | "uploading" | "processing" | "analyzing" | "completed" | "error";
+
+export default function Dashboard() {
+  const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatusType>("idle");
+  const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
+
+  const handleVideoSelect = (file: File) => {
+    setSelectedVideo(file);
+    setAnalysisStatus("uploading");
+    
+    // Simulate analysis process
+    setTimeout(() => setAnalysisStatus("processing"), 1000);
+    setTimeout(() => setAnalysisStatus("analyzing"), 3000);
+    setTimeout(() => setAnalysisStatus("completed"), 8000);
+  };
+
+  const metrics = [
+    {
+      title: "Total Analyses",
+      value: "1,247",
+      change: "+12.5%",
+      icon: Activity,
+      description: "From last month"
+    },
+    {
+      title: "Active Users",
+      value: "89",
+      change: "+5.2%",
+      icon: Users,
+      description: "Currently online"
+    },
+    {
+      title: "Accuracy Rate",
+      value: "94.2%",
+      change: "+2.1%",
+      icon: Target,
+      description: "Motion detection"
+    },
+    {
+      title: "Processing Time",
+      value: "2.3s",
+      change: "-15.3%",
+      icon: TrendingUp,
+      description: "Average per video"
+    }
+  ];
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      {/* Header */}
+      <header className="border-b bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 dark:from-slate-200 dark:to-slate-400 bg-clip-text text-transparent">
+                PhiMotion3Agent
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Professional Motion Analysis Dashboard
+              </p>
+            </div>
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+              Live
+            </Badge>
+          </div>
         </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {metrics.map((metric, index) => (
+            <Card key={index} className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {metric.title}
+                    </p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                      {metric.value}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {metric.description}
+                    </p>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <metric.icon className="h-8 w-8 text-slate-600 dark:text-slate-400" />
+                    <span className={`text-xs font-medium ${
+                      metric.change.startsWith('+') 
+                        ? 'text-green-600 dark:text-green-400' 
+                        : 'text-red-600 dark:text-red-400'
+                    }`}>
+                      {metric.change}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Main Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Upload and Status */}
+          <div className="lg:col-span-1 space-y-6">
+            <VideoUpload onVideoSelect={handleVideoSelect} />
+            <AnalysisStatus status={analysisStatus} />
+            <ThemeSwitcher />
+          </div>
+
+          {/* Right Column - Charts and Results */}
+          <div className="lg:col-span-2">
+            {analysisStatus === "completed" ? (
+              <Charts />
+            ) : (
+              <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg h-full">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Analysis Results
+                  </CardTitle>
+                  <CardDescription>
+                    Upload a video to see detailed motion analysis results
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex items-center justify-center h-64">
+                  <div className="text-center">
+                    <Activity className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+                    <p className="text-muted-foreground">
+                      {analysisStatus === "idle" 
+                        ? "No analysis data available" 
+                        : "Analysis in progress..."}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground">
+              PhiMotion3Agent - Advanced Motion Analysis Platform
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Built with Next.js, TypeScript, and Tailwind CSS
+            </p>
+          </div>
+        </footer>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
