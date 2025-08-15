@@ -5,6 +5,7 @@ import { VideoUpload } from "@/components/VideoUpload";
 import { AnalysisStatus } from "@/components/AnalysisStatus";
 import { Charts } from "@/components/Charts";
 import { AnalysisResults } from "@/components/AnalysisResults";
+import { HipGaitAnalysis } from "@/components/HipGaitAnalysis";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -132,6 +133,7 @@ export default function Dashboard() {
                   onExport={() => console.log('Export functionality')}
                   onShare={() => console.log('Share functionality')}
                 />
+                <HipGaitAnalysis />
               </>
             ) : (
               <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg h-full">
