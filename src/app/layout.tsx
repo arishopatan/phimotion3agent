@@ -17,7 +17,6 @@ export const metadata: Metadata = {
   description: "Advanced motion analysis platform with real-time joint tracking, symmetry analysis, and professional visualization tools.",
   keywords: "motion analysis, joint tracking, biomechanics, sports analysis, rehabilitation",
   authors: [{ name: "PhiMotion3Agent Team" }],
-  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({
