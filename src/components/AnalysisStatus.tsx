@@ -14,7 +14,7 @@ interface AnalysisStatusProps {
   error?: string;
 }
 
-export function AnalysisStatus({ status, progress = 0, error }: AnalysisStatusProps) {
+export function AnalysisStatus({ status, error }: AnalysisStatusProps) {
   const [currentProgress, setCurrentProgress] = useState(0);
 
   useEffect(() => {

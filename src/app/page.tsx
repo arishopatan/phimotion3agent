@@ -13,10 +13,8 @@ type AnalysisStatusType = "idle" | "uploading" | "processing" | "analyzing" | "c
 
 export default function Dashboard() {
   const [analysisStatus, setAnalysisStatus] = useState<AnalysisStatusType>("idle");
-  const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
 
-  const handleVideoSelect = (file: File) => {
-    setSelectedVideo(file);
+  const handleVideoSelect = (_file: File) => {
     setAnalysisStatus("uploading");
     
     // Simulate analysis process

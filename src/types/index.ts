@@ -72,7 +72,7 @@ export interface Metric {
 export interface ThemeConfig {
   name: Theme;
   label: string;
-  icon: React.ReactNode;
+  icon: React.ComponentType<{ className?: string }>;
   gradient: string;
   primaryColor: string;
   primaryForeground: string;

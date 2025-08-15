@@ -1,4 +1,4 @@
-import { VideoFile, AnalysisStatus, Theme } from '@/types';
+import { AnalysisStatus, Theme } from '@/types';
 
 // File utilities
 export const formatFileSize = (bytes: number): string => {

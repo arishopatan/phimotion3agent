@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { AnalysisStatus, VideoFile, AnalysisResult } from '@/types';
-import { storage, calculateProgress, createError } from '@/utils';
+import { storage, createError } from '@/utils';
 
 interface UseAnalysisReturn {
   status: AnalysisStatus;
@@ -25,7 +25,7 @@ export const useAnalysis = (): UseAnalysisReturn => {
   // Load analysis history from localStorage on mount
   useEffect(() => {
     const savedHistory = storage.get<AnalysisResult[]>('analysisHistory', []);
-    setAnalysisHistory(savedHistory);
+    setAnalysisHistory(savedHistory || []);
   }, []);
 
   // Save analysis history to localStorage when it changes
