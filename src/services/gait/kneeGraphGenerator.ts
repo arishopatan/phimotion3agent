@@ -3,7 +3,7 @@
  * Creates knee angle visualizations with support for multiple gait modes
  */
 
-import { GaitMode, getGaitModeConfig, getJointConfig } from '@/config/gaitModePresets';
+import { GaitMode, getGaitModeConfig } from '@/config/gaitModePresets';
 
 export interface KneeDataPoint {
   gaitCyclePercent: number;
@@ -215,17 +215,20 @@ export class KneeGraphGenerator {
     
     dataPoints.forEach(point => {
       const percent = Math.round(point.gaitCyclePercent);
-      if (!averagedData[percent]) {
-        averagedData[percent] = { left: [], right: [], phase: point.phase };
+      // Safety check for valid data
+      if (percent >= 0 && percent <= 100 && !isNaN(point.kneeLeft) && !isNaN(point.kneeRight)) {
+        if (!averagedData[percent]) {
+          averagedData[percent] = { left: [], right: [], phase: point.phase };
+        }
+        averagedData[percent].left.push(point.kneeLeft);
+        averagedData[percent].right.push(point.kneeRight);
       }
-      averagedData[percent].left.push(point.kneeLeft);
-      averagedData[percent].right.push(point.kneeRight);
     });
     
     // Create single averaged cycle
     const singleCycle: KneeDataPoint[] = [];
     for (let percent = 0; percent <= 100; percent++) {
-      if (averagedData[percent]) {
+      if (averagedData[percent] && averagedData[percent].left.length > 0 && averagedData[percent].right.length > 0) {
         const avgLeft = averagedData[percent].left.reduce((sum, val) => sum + val, 0) / averagedData[percent].left.length;
         const avgRight = averagedData[percent].right.reduce((sum, val) => sum + val, 0) / averagedData[percent].right.length;
         
