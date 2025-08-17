@@ -6,6 +6,7 @@ import { AnalysisStatus } from "@/components/AnalysisStatus";
 import { Charts } from "@/components/Charts";
 import { AnalysisResults } from "@/components/AnalysisResults";
 import { HipGaitAnalysis } from "@/components/HipGaitAnalysis";
+import { KneeGaitAnalysis } from "@/components/KneeGaitAnalysis";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -134,6 +135,7 @@ export default function Dashboard() {
                   onShare={() => console.log('Share functionality')}
                 />
                 <HipGaitAnalysis />
+                <KneeGaitAnalysis />
               </>
             ) : (
               <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg h-full">
