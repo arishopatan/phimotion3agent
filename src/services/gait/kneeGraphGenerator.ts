@@ -64,12 +64,17 @@ export class KneeGraphGenerator {
 
   /**
    * Generate realistic knee angle data for the specified gait mode
+   * Creates clean, single gait cycle with proper asymmetry
    */
   generateKneeData(durationSeconds: number = 10): KneeDataPoint[] {
     const frameRate = this.config.analysisSettings.frameRate;
     const cycleDuration = this.config.analysisSettings.cycleDuration;
     const frames = Math.floor(durationSeconds * frameRate);
     const dataPoints: KneeDataPoint[] = [];
+
+    // Generate individual asymmetry factors for realistic differences
+    const leftAsymmetryFactor = 0.95 + (Math.random() * 0.1); // 0.95-1.05
+    const rightAsymmetryFactor = 0.95 + (Math.random() * 0.1); // 0.95-1.05
 
     for (let i = 0; i < frames; i++) {
       const time = i / frameRate;
@@ -78,9 +83,13 @@ export class KneeGraphGenerator {
       const leftCyclePosition = (time % cycleDuration) / cycleDuration;
       const rightCyclePosition = ((time + cycleDuration / 2) % cycleDuration) / cycleDuration;
       
-      // Generate realistic knee angles based on gait mode
-      const leftKnee = this.generateKneeAngle(leftCyclePosition);
-      const rightKnee = this.generateKneeAngle(rightCyclePosition);
+      // Generate realistic knee angles with asymmetry
+      const baseLeftKnee = this.generateKneeAngle(leftCyclePosition);
+      const baseRightKnee = this.generateKneeAngle(rightCyclePosition);
+      
+      // Apply asymmetry and smoothing
+      const leftKnee = this.applySmoothingAndAsymmetry(baseLeftKnee, leftAsymmetryFactor, i, frames);
+      const rightKnee = this.applySmoothingAndAsymmetry(baseRightKnee, rightAsymmetryFactor, i, frames);
       
       // Determine gait phase
       const phase = this.getPhaseAtPosition(leftCyclePosition);
@@ -94,7 +103,7 @@ export class KneeGraphGenerator {
       });
     }
 
-    return dataPoints;
+    return this.generateAveragedSingleCycle(dataPoints);
   }
 
   /**
@@ -128,23 +137,109 @@ export class KneeGraphGenerator {
   }
 
   /**
-   * Generate walking knee angle pattern
+   * Generate walking knee angle pattern - realistic and smooth
    */
   private generateWalkingKneeAngle(cyclePosition: number): number {
     let angle = 0;
     
-    if (cyclePosition < 0.1) {
-      // Loading response flexion
-      angle = 15 * Math.sin(cyclePosition * 10 * Math.PI);
-    } else if (cyclePosition < 0.6) {
-      // Stance phase extension
-      angle = 5 * Math.cos((cyclePosition - 0.1) * 2 * Math.PI);
+    // Professional walking knee pattern based on biomechanics research
+    if (cyclePosition < 0.12) {
+      // Initial Contact to Loading Response (0-12%)
+      // Small flexion wave during weight acceptance
+      angle = 12 * Math.sin(cyclePosition * Math.PI / 0.12);
+    } else if (cyclePosition < 0.31) {
+      // Loading Response to Mid Stance (12-31%)
+      // Extension to neutral
+      const localPos = (cyclePosition - 0.12) / (0.31 - 0.12);
+      angle = 12 * (1 - localPos) + 2 * Math.sin(localPos * Math.PI);
+    } else if (cyclePosition < 0.50) {
+      // Mid Stance to Terminal Stance (31-50%)
+      // Slight extension, approaching toe-off
+      const localPos = (cyclePosition - 0.31) / (0.50 - 0.31);
+      angle = 2 * (1 - localPos);
+    } else if (cyclePosition < 0.62) {
+      // Terminal Stance to Pre-Swing (50-62%)
+      // Beginning of swing flexion
+      const localPos = (cyclePosition - 0.50) / (0.62 - 0.50);
+      angle = 15 * localPos;
+    } else if (cyclePosition < 0.75) {
+      // Pre-Swing to Initial Swing (62-75%)
+      // Peak swing flexion
+      const localPos = (cyclePosition - 0.62) / (0.75 - 0.62);
+      angle = 15 + 50 * Math.sin(localPos * Math.PI);
+    } else if (cyclePosition < 0.87) {
+      // Initial Swing to Mid Swing (75-87%)
+      // Maintaining swing flexion
+      const localPos = (cyclePosition - 0.75) / (0.87 - 0.75);
+      angle = 65 - 25 * localPos;
     } else {
-      // Swing phase flexion
-      angle = 35 * Math.sin((cyclePosition - 0.6) * 2.5 * Math.PI);
+      // Mid Swing to Terminal Swing (87-100%)
+      // Extension preparing for next IC
+      const localPos = (cyclePosition - 0.87) / (1.0 - 0.87);
+      angle = 40 * (1 - localPos) + 5 * Math.sin(localPos * 2 * Math.PI);
     }
     
-    return Math.max(0, angle);
+    return Math.max(-5, Math.min(75, angle));
+  }
+
+  /**
+   * Apply smoothing and asymmetry to knee angle data
+   */
+  private applySmoothingAndAsymmetry(baseAngle: number, asymmetryFactor: number, frameIndex: number, totalFrames: number): number {
+    // Apply asymmetry factor
+    let angle = baseAngle * asymmetryFactor;
+    
+    // Add small amount of realistic noise (±1°)
+    const noise = (Math.random() - 0.5) * 2;
+    angle += noise;
+    
+    // Apply simple moving average for smoothing (3-point window)
+    // This is a simplified version - in real implementation would use proper filtering
+    const smoothingFactor = 0.1;
+    angle = angle * (1 - smoothingFactor) + baseAngle * smoothingFactor;
+    
+    return Math.round(angle * 10) / 10;
+  }
+
+  /**
+   * Generate averaged single gait cycle from multiple cycles
+   */
+  private generateAveragedSingleCycle(dataPoints: KneeDataPoint[]): KneeDataPoint[] {
+    // Extract cycles and average them for clean output
+    const cycleDuration = this.config.analysisSettings.cycleDuration;
+    const frameRate = this.config.analysisSettings.frameRate;
+    const framesPerCycle = Math.floor(cycleDuration * frameRate);
+    
+    // Group data by cycle percentage for averaging
+    const averagedData: { [key: number]: { left: number[], right: number[], phase: string } } = {};
+    
+    dataPoints.forEach(point => {
+      const percent = Math.round(point.gaitCyclePercent);
+      if (!averagedData[percent]) {
+        averagedData[percent] = { left: [], right: [], phase: point.phase };
+      }
+      averagedData[percent].left.push(point.kneeLeft);
+      averagedData[percent].right.push(point.kneeRight);
+    });
+    
+    // Create single averaged cycle
+    const singleCycle: KneeDataPoint[] = [];
+    for (let percent = 0; percent <= 100; percent++) {
+      if (averagedData[percent]) {
+        const avgLeft = averagedData[percent].left.reduce((sum, val) => sum + val, 0) / averagedData[percent].left.length;
+        const avgRight = averagedData[percent].right.reduce((sum, val) => sum + val, 0) / averagedData[percent].right.length;
+        
+        singleCycle.push({
+          gaitCyclePercent: percent,
+          phase: averagedData[percent].phase,
+          kneeLeft: Math.round(avgLeft * 10) / 10,
+          kneeRight: Math.round(avgRight * 10) / 10,
+          time: percent / 100 * cycleDuration
+        });
+      }
+    }
+    
+    return singleCycle.length > 0 ? singleCycle : dataPoints.slice(0, framesPerCycle);
   }
 
   /**
@@ -360,8 +455,10 @@ export class KneeGraphGenerator {
       recommendations.push("Knee ROM is below normal range. Consider mobility exercises.");
     }
     
-    if (asymmetry > 10) {
-      recommendations.push("Significant knee asymmetry detected. Focus on bilateral training.");
+    if (asymmetry >= 15) {
+      recommendations.push("High knee asymmetry detected. Focus on bilateral training.");
+    } else if (asymmetry >= 5) {
+      recommendations.push("Moderate knee asymmetry detected. Include unilateral exercises.");
     }
     
     if (dataQuality === 'poor') {

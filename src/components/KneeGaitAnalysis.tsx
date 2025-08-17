@@ -54,17 +54,13 @@ export function KneeGaitAnalysis({ onExportPNG }: KneeGaitAnalysisProps) {
       const csv = generator.generateCSVData(dataPoints);
       setCsvData(csv);
       
-      // Prepare chart data (sample every 5th point for smooth visualization)
-      const chartPoints: ChartDataPoint[] = [];
-      for (let i = 0; i < dataPoints.length; i += 5) {
-        const point = dataPoints[i];
-        chartPoints.push({
-          gaitCyclePercent: point.gaitCyclePercent,
-          kneeLeft: point.kneeLeft,
-          kneeRight: point.kneeRight,
-          phase: point.phase
-        });
-      }
+      // Prepare chart data for single clean cycle (use all points for smooth curve)
+      const chartPoints: ChartDataPoint[] = dataPoints.map(point => ({
+        gaitCyclePercent: point.gaitCyclePercent,
+        kneeLeft: point.kneeLeft,
+        kneeRight: point.kneeRight,
+        phase: point.phase
+      }));
       setChartData(chartPoints);
       
     } catch (error) {
@@ -437,12 +433,12 @@ export function KneeGaitAnalysis({ onExportPNG }: KneeGaitAnalysisProps) {
                 <Badge 
                   variant="outline" 
                   className={`text-xs ${
-                    analysisResult.romAnalysis.asymmetry > 10 ? 'text-red-600' : 
-                    analysisResult.romAnalysis.asymmetry > 5 ? 'text-yellow-600' : 'text-green-600'
+                    analysisResult.romAnalysis.asymmetry >= 15 ? 'text-red-600' : 
+                    analysisResult.romAnalysis.asymmetry >= 5 ? 'text-yellow-600' : 'text-green-600'
                   }`}
                 >
-                  {analysisResult.romAnalysis.asymmetry > 10 ? 'High Asymmetry' : 
-                   analysisResult.romAnalysis.asymmetry > 5 ? 'Moderate Asymmetry' : 'Low Asymmetry'}
+                  {analysisResult.romAnalysis.asymmetry >= 15 ? 'High Asymmetry' : 
+                   analysisResult.romAnalysis.asymmetry >= 5 ? 'Moderate Asymmetry' : 'Low Asymmetry'}
                 </Badge>
               </div>
             </div>
