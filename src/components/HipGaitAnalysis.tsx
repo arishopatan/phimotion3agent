@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from "recharts";
-import { Download, BarChart3, Info, Play, RefreshCw } from "lucide-react";
+import { Download, BarChart3, Info, Play, RefreshCw, Target } from "lucide-react";
 import { GaitCycleDetector, GaitData, GaitCycle } from "@/services/gait/gaitCycleDetection";
 import { GaitPhaseDetector } from "@/services/gait/gaitPhaseDetection";
+import { ROMCalculator, ROMAnalysis } from "@/services/gait/romCalculation";
 
 interface HipGaitAnalysisProps {
   onExportPNG?: (canvas: HTMLCanvasElement) => void;
@@ -32,6 +33,9 @@ export function HipGaitAnalysis({ onExportPNG }: HipGaitAnalysisProps) {
     avgCycleDuration: 0,
     dataQuality: 'Excellent'
   });
+  
+  const [romAnalysis, setRomAnalysis] = useState<ROMAnalysis | null>(null);
+  const [csvData, setCsvData] = useState<any[]>([]);
   
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -61,6 +65,19 @@ export function HipGaitAnalysis({ onExportPNG }: HipGaitAnalysisProps) {
       
       // Calculate average joint angles
       const averages = GaitCycleDetector.calculateAverageAngles(normalizedCycles);
+      
+      // Calculate ROM analysis
+      const rom = ROMCalculator.calculateBilateralROM(averages.leftHip, averages.rightHip);
+      setRomAnalysis(rom);
+      
+      // Generate CSV data
+      const timePoints = Array.from({ length: 101 }, (_, i) => i / 100);
+      const csvData = ROMCalculator.generateROMCSVData(
+        averages.leftHip,
+        averages.rightHip,
+        timePoints
+      );
+      setCsvData(csvData);
       
       // Prepare chart data
       const chartPoints: ChartDataPoint[] = [];
@@ -93,6 +110,52 @@ export function HipGaitAnalysis({ onExportPNG }: HipGaitAnalysisProps) {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  /**
+   * Export CSV data
+   */
+  const exportCSV = () => {
+    if (csvData.length === 0) return;
+    
+    const headers = [
+      'Frame',
+      'Time(s)',
+      'GaitCycle(%)',
+      'LeftHip(deg)',
+      'RightHip(deg)',
+      'LeftROM(%)',
+      'RightROM(%)',
+      'LeftFlexion(deg)',
+      'RightFlexion(deg)',
+      'LeftExtension(deg)',
+      'RightExtension(deg)'
+    ];
+    
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => [
+        row.frame,
+        row.time,
+        Math.round(row.frame),
+        row.leftAngle,
+        row.rightAngle,
+        row.leftROM,
+        row.rightROM,
+        row.leftFlexion,
+        row.rightFlexion,
+        row.leftExtension,
+        row.rightExtension
+      ].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hip-gait-analysis-rom.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   /**
@@ -342,6 +405,15 @@ export function HipGaitAnalysis({ onExportPNG }: HipGaitAnalysisProps) {
                 {isAnalyzing ? 'Analyzing...' : 'Re-analyze'}
               </Button>
               <Button
+                onClick={exportCSV}
+                variant="outline"
+                size="sm"
+                disabled={csvData.length === 0}
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button
                 onClick={exportAsPNG}
                 variant="outline"
                 size="sm"
@@ -382,6 +454,104 @@ export function HipGaitAnalysis({ onExportPNG }: HipGaitAnalysisProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* ROM Analysis Summary */}
+      {romAnalysis && (
+        <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-purple-600" />
+              Range of Motion (ROM) Analysis
+            </CardTitle>
+            <CardDescription>
+              Hip joint range of motion calculated using anatomical zero and peak detection
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm text-muted-foreground">Left Hip ROM</h4>
+                <div className="text-2xl font-bold text-red-600">{romAnalysis.left.totalROM}°</div>
+                <div className="text-xs text-muted-foreground">
+                  Flex: {romAnalysis.left.maxFlexion}° | Ext: {romAnalysis.left.maxExtension}°
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {romAnalysis.left.method === 'peak_detection' ? 'Peak Detection' : 'Percentile'}
+                </Badge>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm text-muted-foreground">Right Hip ROM</h4>
+                <div className="text-2xl font-bold text-blue-600">{romAnalysis.right.totalROM}°</div>
+                <div className="text-xs text-muted-foreground">
+                  Flex: {romAnalysis.right.maxFlexion}° | Ext: {romAnalysis.right.maxExtension}°
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {romAnalysis.right.method === 'peak_detection' ? 'Peak Detection' : 'Percentile'}
+                </Badge>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm text-muted-foreground">Average ROM</h4>
+                <div className="text-2xl font-bold text-green-600">{romAnalysis.averageROM}°</div>
+                <div className="text-xs text-muted-foreground">
+                  Bilateral average
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs ${
+                    romAnalysis.averageROM < 20 ? 'text-red-600' : 
+                    romAnalysis.averageROM > 50 ? 'text-yellow-600' : 'text-green-600'
+                  }`}
+                >
+                  {romAnalysis.averageROM < 20 ? 'Low ROM' : 
+                   romAnalysis.averageROM > 50 ? 'High ROM' : 'Normal ROM'}
+                </Badge>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm text-muted-foreground">Asymmetry</h4>
+                <div className="text-2xl font-bold text-purple-600">{romAnalysis.asymmetry}°</div>
+                <div className="text-xs text-muted-foreground">
+                  Left vs Right difference
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs ${
+                    romAnalysis.asymmetry > 10 ? 'text-red-600' : 
+                    romAnalysis.asymmetry > 5 ? 'text-yellow-600' : 'text-green-600'
+                  }`}
+                >
+                  {romAnalysis.asymmetry > 10 ? 'High Asymmetry' : 
+                   romAnalysis.asymmetry > 5 ? 'Moderate Asymmetry' : 'Low Asymmetry'}
+                </Badge>
+              </div>
+            </div>
+            
+            <div className="mt-4 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h5 className="font-medium text-sm">Data Quality</h5>
+                  <p className="text-xs text-muted-foreground">
+                    Confidence: {Math.round((romAnalysis.left.confidence + romAnalysis.right.confidence) / 2 * 100)}%
+                  </p>
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className={`${
+                    romAnalysis.dataQuality === 'excellent' ? 'bg-green-50 text-green-700 border-green-200' :
+                    romAnalysis.dataQuality === 'good' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                    romAnalysis.dataQuality === 'fair' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                    'bg-red-50 text-red-700 border-red-200'
+                  }`}
+                >
+                  {romAnalysis.dataQuality.charAt(0).toUpperCase() + romAnalysis.dataQuality.slice(1)} Quality
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Chart */}
       <Card className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-0 shadow-lg">
