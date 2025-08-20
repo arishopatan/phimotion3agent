@@ -138,73 +138,66 @@ export class KneeGraphGenerator {
 
   /**
    * Generate biomechanically correct walking knee angle pattern
-   * Based on clinical gait analysis and anatomical constraints
+   * Based on reference clinical gait data - smooth and realistic
    */
   private generateWalkingKneeAngle(cyclePosition: number): number {
     let angle = 0;
     
-    // Biomechanically accurate walking knee pattern
-    if (cyclePosition <= 0.02) {
-      // Initial Contact (0-2%): Heel strike with slight knee flexion
-      angle = 5 + (cyclePosition / 0.02) * 3; // 5° to 8°
+    // Professional walking knee pattern matching reference graph
+    if (cyclePosition <= 0.60) {
+      // STANCE PHASE (0-60%): Minimal knee flexion - weight bearing leg stays mostly straight
       
-    } else if (cyclePosition <= 0.12) {
-      // Loading Response (2-12%): Weight acceptance flexion
-      const localPos = (cyclePosition - 0.02) / (0.12 - 0.02);
-      angle = 8 + 7 * Math.sin(localPos * Math.PI); // Peak ~15° at 7%
-      
-    } else if (cyclePosition <= 0.31) {
-      // Mid Stance (12-31%): Extension toward neutral
-      const localPos = (cyclePosition - 0.12) / (0.31 - 0.12);
-      angle = 15 * (1 - localPos) + 3; // 15° to 3°
-      
-    } else if (cyclePosition <= 0.50) {
-      // Terminal Stance (31-50%): Slight extension, preparing for push-off
-      const localPos = (cyclePosition - 0.31) / (0.50 - 0.31);
-      angle = 3 * (1 - localPos); // 3° to 0°
-      
-    } else if (cyclePosition <= 0.62) {
-      // Pre-Swing (50-62%): Rapid knee flexion begins (toe-off occurs ~60%)
-      const localPos = (cyclePosition - 0.50) / (0.62 - 0.50);
-      // Exponential rise to simulate rapid flexion after toe-off
-      angle = 35 * (localPos * localPos); // 0° to 35°
-      
-    } else if (cyclePosition <= 0.73) {
-      // Initial Swing (62-73%): Continued flexion to peak
-      const localPos = (cyclePosition - 0.62) / (0.73 - 0.62);
-      // Smooth transition to peak flexion
-      angle = 35 + 30 * Math.sin(localPos * Math.PI * 0.7); // 35° to 65°
-      
-    } else if (cyclePosition <= 0.87) {
-      // Mid Swing (73-87%): MAINTAIN peak flexion (anatomically correct)
-      const localPos = (cyclePosition - 0.73) / (0.87 - 0.73);
-      // Slight plateau with minimal variation (NO mid-swing extension!)
-      angle = 63 + 2 * Math.sin(localPos * Math.PI); // 63° to 65° to 63°
+      if (cyclePosition <= 0.08) {
+        // Initial Contact & Loading Response (0-8%): Brief loading flexion
+        const localPos = cyclePosition / 0.08;
+        angle = 5 + 10 * Math.sin(localPos * Math.PI) * 0.5; // Very small wave: 5° to 10° to 8°
+        
+      } else if (cyclePosition <= 0.35) {
+        // Mid Stance (8-35%): Stable extension - nearly flat
+        const localPos = (cyclePosition - 0.08) / (0.35 - 0.08);
+        angle = 8 * (1 - localPos) + 3; // Gentle decline: 8° to 3°
+        
+      } else {
+        // Terminal Stance (35-60%): Preparing for toe-off - stay low
+        const localPos = (cyclePosition - 0.35) / (0.60 - 0.35);
+        angle = 3 * (1 - localPos * 0.8); // Minimal decline: 3° to 1°
+      }
       
     } else {
-      // Terminal Swing (87-100%): Extension preparing for next heel strike
-      const localPos = (cyclePosition - 0.87) / (1.0 - 0.87);
-      // Smooth extension to next initial contact
-      angle = 63 * (1 - localPos * localPos) + 5 * localPos; // 63° to 5°
+      // SWING PHASE (60-100%): Dynamic pendulum motion - smooth and continuous
+      
+      if (cyclePosition <= 0.75) {
+        // Swing Ascent (60-75%): Smooth rise to peak
+        const localPos = (cyclePosition - 0.60) / (0.75 - 0.60);
+        // Smooth exponential rise like reference graph
+        const progress = localPos * localPos * (3 - 2 * localPos); // Smooth S-curve
+        angle = 1 + 60 * progress; // 1° to 61°
+        
+      } else {
+        // Swing Descent (75-100%): Smooth descent for next heel strike
+        const localPos = (cyclePosition - 0.75) / (1.0 - 0.75);
+        // Smooth descent matching reference curve
+        const progress = 1 - (localPos * localPos * (3 - 2 * localPos)); // Inverted S-curve
+        angle = 61 * progress + 5 * (1 - progress); // 61° to 5°
+      }
     }
     
     return Math.max(0, Math.min(70, Math.round(angle * 10) / 10));
   }
 
   /**
-   * Apply smoothing and asymmetry to knee angle data
+   * Apply smoothing and asymmetry to knee angle data for realistic variation
    */
   private applySmoothingAndAsymmetry(baseAngle: number, asymmetryFactor: number, frameIndex: number, totalFrames: number): number {
     // Apply asymmetry factor
     let angle = baseAngle * asymmetryFactor;
     
-    // Add small amount of realistic noise (±1°)
-    const noise = (Math.random() - 0.5) * 2;
+    // Add minimal realistic noise (±0.5° instead of ±1°) for smoother curves
+    const noise = (Math.random() - 0.5) * 1.0;
     angle += noise;
     
-    // Apply simple moving average for smoothing (3-point window)
-    // This is a simplified version - in real implementation would use proper filtering
-    const smoothingFactor = 0.1;
+    // Enhanced smoothing for more dynamic flow
+    const smoothingFactor = 0.05; // Reduced for more responsive curves
     angle = angle * (1 - smoothingFactor) + baseAngle * smoothingFactor;
     
     return Math.round(angle * 10) / 10;
