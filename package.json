@@ -25,6 +25,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "dev:clean": "rm -rf .next && npm run dev",
+    "dev:safe": "rm -rf .next && rm -rf node_modules/.cache && npm run build && npm run dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
