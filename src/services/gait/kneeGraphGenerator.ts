@@ -137,49 +137,58 @@ export class KneeGraphGenerator {
   }
 
   /**
-   * Generate walking knee angle pattern - realistic and smooth
+   * Generate biomechanically correct walking knee angle pattern
+   * Based on clinical gait analysis and anatomical constraints
    */
   private generateWalkingKneeAngle(cyclePosition: number): number {
     let angle = 0;
     
-    // Professional walking knee pattern based on biomechanics research
-    if (cyclePosition < 0.12) {
-      // Initial Contact to Loading Response (0-12%)
-      // Small flexion wave during weight acceptance
-      angle = 12 * Math.sin(cyclePosition * Math.PI / 0.12);
-    } else if (cyclePosition < 0.31) {
-      // Loading Response to Mid Stance (12-31%)
-      // Extension to neutral
+    // Biomechanically accurate walking knee pattern
+    if (cyclePosition <= 0.02) {
+      // Initial Contact (0-2%): Heel strike with slight knee flexion
+      angle = 5 + (cyclePosition / 0.02) * 3; // 5° to 8°
+      
+    } else if (cyclePosition <= 0.12) {
+      // Loading Response (2-12%): Weight acceptance flexion
+      const localPos = (cyclePosition - 0.02) / (0.12 - 0.02);
+      angle = 8 + 7 * Math.sin(localPos * Math.PI); // Peak ~15° at 7%
+      
+    } else if (cyclePosition <= 0.31) {
+      // Mid Stance (12-31%): Extension toward neutral
       const localPos = (cyclePosition - 0.12) / (0.31 - 0.12);
-      angle = 12 * (1 - localPos) + 2 * Math.sin(localPos * Math.PI);
-    } else if (cyclePosition < 0.50) {
-      // Mid Stance to Terminal Stance (31-50%)
-      // Slight extension, approaching toe-off
+      angle = 15 * (1 - localPos) + 3; // 15° to 3°
+      
+    } else if (cyclePosition <= 0.50) {
+      // Terminal Stance (31-50%): Slight extension, preparing for push-off
       const localPos = (cyclePosition - 0.31) / (0.50 - 0.31);
-      angle = 2 * (1 - localPos);
-    } else if (cyclePosition < 0.62) {
-      // Terminal Stance to Pre-Swing (50-62%)
-      // Beginning of swing flexion
+      angle = 3 * (1 - localPos); // 3° to 0°
+      
+    } else if (cyclePosition <= 0.62) {
+      // Pre-Swing (50-62%): Rapid knee flexion begins (toe-off occurs ~60%)
       const localPos = (cyclePosition - 0.50) / (0.62 - 0.50);
-      angle = 15 * localPos;
-    } else if (cyclePosition < 0.75) {
-      // Pre-Swing to Initial Swing (62-75%)
-      // Peak swing flexion
-      const localPos = (cyclePosition - 0.62) / (0.75 - 0.62);
-      angle = 15 + 50 * Math.sin(localPos * Math.PI);
-    } else if (cyclePosition < 0.87) {
-      // Initial Swing to Mid Swing (75-87%)
-      // Maintaining swing flexion
-      const localPos = (cyclePosition - 0.75) / (0.87 - 0.75);
-      angle = 65 - 25 * localPos;
+      // Exponential rise to simulate rapid flexion after toe-off
+      angle = 35 * (localPos * localPos); // 0° to 35°
+      
+    } else if (cyclePosition <= 0.73) {
+      // Initial Swing (62-73%): Continued flexion to peak
+      const localPos = (cyclePosition - 0.62) / (0.73 - 0.62);
+      // Smooth transition to peak flexion
+      angle = 35 + 30 * Math.sin(localPos * Math.PI * 0.7); // 35° to 65°
+      
+    } else if (cyclePosition <= 0.87) {
+      // Mid Swing (73-87%): MAINTAIN peak flexion (anatomically correct)
+      const localPos = (cyclePosition - 0.73) / (0.87 - 0.73);
+      // Slight plateau with minimal variation (NO mid-swing extension!)
+      angle = 63 + 2 * Math.sin(localPos * Math.PI); // 63° to 65° to 63°
+      
     } else {
-      // Mid Swing to Terminal Swing (87-100%)
-      // Extension preparing for next IC
+      // Terminal Swing (87-100%): Extension preparing for next heel strike
       const localPos = (cyclePosition - 0.87) / (1.0 - 0.87);
-      angle = 40 * (1 - localPos) + 5 * Math.sin(localPos * 2 * Math.PI);
+      // Smooth extension to next initial contact
+      angle = 63 * (1 - localPos * localPos) + 5 * localPos; // 63° to 5°
     }
     
-    return Math.max(-5, Math.min(75, angle));
+    return Math.max(0, Math.min(70, Math.round(angle * 10) / 10));
   }
 
   /**
