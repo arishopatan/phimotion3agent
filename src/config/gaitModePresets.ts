@@ -56,7 +56,7 @@ export const GAIT_MODE_PRESETS: Record<GaitMode, GaitModeConfig> = {
     jointRanges: {
       hip: { min: -50, max: 50, center: 0 },
       knee: { min: -20, max: 80, center: 0 },
-      ankle: { min: -30, max: 30, center: 0 }
+      ankle: { min: -50, max: 20, center: 0 }
     },
     phaseBoundaries: {
       IC: 0,    // Initial Contact
@@ -94,7 +94,7 @@ export const GAIT_MODE_PRESETS: Record<GaitMode, GaitModeConfig> = {
     jointRanges: {
       hip: { min: -60, max: 60, center: 0 },
       knee: { min: -30, max: 100, center: 0 },
-      ankle: { min: -40, max: 40, center: 0 }
+      ankle: { min: -50, max: 25, center: 0 }
     },
     phaseBoundaries: {
       IC: 0,
@@ -132,7 +132,7 @@ export const GAIT_MODE_PRESETS: Record<GaitMode, GaitModeConfig> = {
     jointRanges: {
       hip: { min: -70, max: 70, center: 0 },
       knee: { min: -40, max: 120, center: 0 },
-      ankle: { min: -50, max: 50, center: 0 }
+      ankle: { min: -50, max: 30, center: 0 }
     },
     phaseBoundaries: {
       IC: 0,
